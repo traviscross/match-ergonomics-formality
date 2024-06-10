@@ -1,0 +1,10 @@
+[package]
+name = "match-ergonomics-formality"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+flate2 = { version = "1.0.30", default-features = false, features = ["zlib"] }
+rustyline = { version = "14.0.0", default-features = false }
+serde = { version = "1.0.203", default-features = false, features = ["std"] }
+serde_json = { version = "1.0.117", default-features = false, features = ["std"] }
