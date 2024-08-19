@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 
 // # Extension traits
 
-trait StrExt {
+pub trait StrExt {
   fn strip_prefix2(&self, prefix: &str) -> Option<(usize, &str)>;
 }
 
@@ -19,54 +19,54 @@ impl StrExt for str {
 // # Shared
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct Span {
-  start: usize,
-  end: usize,
+pub struct Span {
+  pub start: usize,
+  pub end: usize,
 }
 
 impl Span {
-  fn new(start: usize, len: usize) -> Self {
+  pub fn new(start: usize, len: usize) -> Self {
     Self { start, end: start + len }
   }
-  fn nop() -> Self {
+  pub fn nop() -> Self {
     Self { start: 0, end: 0 }
   }
-  fn from2(span1: Span, span2: Span) -> Self {
+  pub fn from2(span1: Span, span2: Span) -> Self {
     Self { start: span1.start, end: span2.end }
   }
-  fn len(&self) -> usize {
+  pub fn len(&self) -> usize {
     self.end - self.start
   }
-  fn extend(&self, end: usize) -> Self {
+  pub fn extend(&self, end: usize) -> Self {
     Self { start: self.start, end }
   }
   #[allow(dead_code)]
-  fn extend_until(&self, span: Span) -> Self {
+  pub fn extend_until(&self, span: Span) -> Self {
     Self { start: self.start, end: span.start }
   }
-  fn extend_across(&self, span: Span) -> Self {
+  pub fn extend_across(&self, span: Span) -> Self {
     Self { start: self.start, end: span.end }
   }
-  fn with_len(&self, len: usize) -> Self {
+  pub fn with_len(&self, len: usize) -> Self {
     Self { start: self.start, end: self.start + len }
   }
-  fn len_until(&self, span: Span) -> usize {
+  pub fn len_until(&self, span: Span) -> usize {
     assert!(span.start >= self.end);
     span.start - self.end
   }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-struct Ident {
+pub struct Ident {
   name: String,
   span: Span,
 }
 
 impl Ident {
-  fn new(name: String, span: Span) -> Self {
+  pub fn new(name: String, span: Span) -> Self {
     Self { name, span }
   }
-  fn len(&self) -> usize {
+  pub fn len(&self) -> usize {
     self.name.len()
   }
 }
@@ -80,12 +80,12 @@ impl Display for Ident {
 // # Error handling
 
 #[derive(Debug)]
-enum Error {
+pub enum Error {
   Unexpected(Span),
   Expected(Span, TokenKind),
 }
 
-fn print_err(xs: &str, err: Error) {
+pub fn print_err(xs: &str, err: Error) {
   match err {
     Error::Unexpected(span) => {
       println!("error: unexpected input");
@@ -115,7 +115,7 @@ fn print_err(xs: &str, err: Error) {
 }
 
 #[derive(Debug)]
-enum ConfError {
+pub enum ConfError {
   UnknownFlag(String),
 }
 
@@ -133,23 +133,23 @@ impl Display for ConfError {
 // # Lexing
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-struct Token {
-  kind: TokenKind,
-  span: Span,
+pub struct Token {
+  pub kind: TokenKind,
+  pub span: Span,
 }
 
 impl Token {
-  fn new(kind: TokenKind, idx: usize) -> Self {
+  pub fn new(kind: TokenKind, idx: usize) -> Self {
     let len = kind.len();
     Self { kind, span: Span::new(idx, len) }
   }
-  fn new_span(kind: TokenKind, span: Span) -> Self {
+  pub fn new_span(kind: TokenKind, span: Span) -> Self {
     Self { kind, span }
   }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-enum TokenKind {
+pub enum TokenKind {
   Amp,
   AmpMut,
   Ref,
@@ -167,7 +167,7 @@ enum TokenKind {
 }
 
 impl TokenKind {
-  fn len(&self) -> usize {
+  pub fn len(&self) -> usize {
     match self {
       TokenKind::Amp => const { "&".len() },
       TokenKind::AmpMut => const { "&mut".len() },
@@ -187,7 +187,7 @@ impl TokenKind {
   }
 }
 
-fn lex(mut xs: &str) -> Result<Vec<Token>, Error> {
+pub fn lex(mut xs: &str) -> Result<Vec<Token>, Error> {
   use TokenKind::*;
   let mut ys = Vec::new();
   let mut idx: usize = 0;
@@ -273,7 +273,7 @@ fn lex(mut xs: &str) -> Result<Vec<Token>, Error> {
 }
 
 #[cfg(test)]
-fn unlex(xs: Vec<Token>) -> String {
+pub fn unlex(xs: Vec<Token>) -> String {
   let mut ys = String::new();
   for x in xs {
     use TokenKind::*;
@@ -314,9 +314,9 @@ fn test_lex() {
 // # Parsing interface
 
 #[derive(Clone, Debug)]
-struct Ctx<'x> {
-  rem: &'x [Token],
-  last_idx: usize,
+pub struct Ctx<'x> {
+  pub rem: &'x [Token],
+  pub last_idx: usize,
 }
 
 impl<'x> Iterator for Ctx<'x> {
@@ -332,7 +332,7 @@ impl<'x> Iterator for Ctx<'x> {
 }
 
 impl<'x> Ctx<'x> {
-  fn new(rem: &'x [Token]) -> Self {
+  pub fn new(rem: &'x [Token]) -> Self {
     let mut last_idx = 0;
     if let Some(Token { span, .. }) = rem.first() {
       last_idx = span.start;
@@ -340,14 +340,14 @@ impl<'x> Ctx<'x> {
     Ctx { rem, last_idx }
   }
 
-  fn rem(&mut self, rem: &'x [Token]) {
+  pub fn rem(&mut self, rem: &'x [Token]) {
     if let Some(Token { span, .. }) = rem.first() {
       self.last_idx = span.end;
     }
     self.rem = rem;
   }
 
-  fn next_token(&mut self) -> Result<(&TokenKind, Span), Error> {
+  pub fn next_token(&mut self) -> Result<(&TokenKind, Span), Error> {
     if let Some(x) = self.rem.first() {
       self.rem(&self.rem[1..]);
       Ok((&x.kind, x.span))
@@ -356,7 +356,7 @@ impl<'x> Ctx<'x> {
     }
   }
 
-  fn expect(&mut self, x: &[TokenKind]) -> Result<Span, Error> {
+  pub fn expect(&mut self, x: &[TokenKind]) -> Result<Span, Error> {
     if x.is_empty() {
       panic!("expected zero tokens");
     }
@@ -374,7 +374,7 @@ impl<'x> Ctx<'x> {
     Ok(span)
   }
 
-  fn peek_expect(&self) -> Result<(&TokenKind, Span), Error> {
+  pub fn peek_expect(&self) -> Result<(&TokenKind, Span), Error> {
     if let Some(x) = self.rem.first() {
       Ok((&x.kind, x.span))
     } else {
@@ -383,23 +383,23 @@ impl<'x> Ctx<'x> {
   }
 }
 
-trait Parse: Sized {
+pub trait Parse: Sized {
   fn parse(cx: &mut Ctx<'_>) -> PResult<Self>;
 }
 
-type PResult<T> = Result<T, Error>;
+pub type PResult<T> = Result<T, Error>;
 
 // # Patterns
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-struct RefMutPat {
-  pat: Box<Pattern>,
-  span: Span,
-  span_min: Span,
+pub struct RefMutPat {
+  pub pat: Box<Pattern>,
+  pub span: Span,
+  pub span_min: Span,
 }
 
 impl RefMutPat {
-  fn new(pat: Pattern, span: Span, span_min: Span) -> Self {
+  pub fn new(pat: Pattern, span: Span, span_min: Span) -> Self {
     Self { pat: Box::new(pat), span, span_min }
   }
 }
@@ -420,14 +420,14 @@ impl Parse for RefMutPat {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-struct RefPat {
-  pat: Box<Pattern>,
-  span: Span,
-  span_min: Span,
+pub struct RefPat {
+  pub pat: Box<Pattern>,
+  pub span: Span,
+  pub span_min: Span,
 }
 
 impl RefPat {
-  fn new(pat: Pattern, span: Span, span_min: Span) -> Self {
+  pub fn new(pat: Pattern, span: Span, span_min: Span) -> Self {
     Self { pat: Box::new(pat), span, span_min }
   }
 }
@@ -453,14 +453,14 @@ impl Parse for RefPat {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-struct SlicePat {
-  pat: Box<Pattern>,
-  span: Span,
-  span_min: Span,
+pub struct SlicePat {
+  pub pat: Box<Pattern>,
+  pub span: Span,
+  pub span_min: Span,
 }
 
 impl SlicePat {
-  fn new(pat: Pattern, span: Span, span_min: Span) -> Self {
+  pub fn new(pat: Pattern, span: Span, span_min: Span) -> Self {
     Self { pat: Box::new(pat), span, span_min }
   }
 }
@@ -482,14 +482,14 @@ impl Parse for SlicePat {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-struct ParenPat {
-  pat: Box<Pattern>,
-  span: Span,
-  span_min: Span,
+pub struct ParenPat {
+  pub pat: Box<Pattern>,
+  pub span: Span,
+  pub span_min: Span,
 }
 
 impl ParenPat {
-  fn new(pat: Pattern, span: Span, span_min: Span) -> Self {
+  pub fn new(pat: Pattern, span: Span, span_min: Span) -> Self {
     Self { pat: Box::new(pat), span, span_min }
   }
 }
@@ -512,22 +512,22 @@ impl Parse for ParenPat {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 #[repr(u8)]
-enum BindingMode {
+pub enum BindingMode {
   Move,
   RefMut,
   Ref,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-struct BindingPat {
-  ident: Ident,
-  mode: BindingMode,
-  is_mut: bool,
-  span: Span,
+pub struct BindingPat {
+  pub ident: Ident,
+  pub mode: BindingMode,
+  pub is_mut: bool,
+  pub span: Span,
 }
 
 impl BindingPat {
-  fn new(
+  pub fn new(
     ident: Ident,
     mode: BindingMode,
     is_mut: bool,
@@ -599,7 +599,7 @@ impl Parse for BindingPat {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-enum Pattern {
+pub enum Pattern {
   RefMut(RefMutPat),
   Ref(RefPat),
   Slice(SlicePat),
@@ -608,7 +608,7 @@ enum Pattern {
 }
 
 impl Pattern {
-  fn span(&self) -> Span {
+  pub fn span(&self) -> Span {
     match self {
       Pattern::RefMut(x) => x.span,
       Pattern::Ref(x) => x.span,
@@ -618,7 +618,7 @@ impl Pattern {
     }
   }
 
-  fn span_min(&self) -> Span {
+  pub fn span_min(&self) -> Span {
     match self {
       Pattern::RefMut(x) => x.span_min,
       Pattern::Ref(x) => x.span_min,
@@ -629,7 +629,7 @@ impl Pattern {
   }
 
   #[must_use]
-  fn map<F: Fn(Self) -> Self>(self, f: F) -> Self {
+  pub fn map<F: Fn(Self) -> Self>(self, f: F) -> Self {
     match f(self) {
       s @ Pattern::Binding(_) => s,
       Pattern::RefMut(mut x) => {
@@ -652,7 +652,7 @@ impl Pattern {
   }
 
   #[must_use]
-  fn simplify(self) -> Self {
+  pub fn simplify(self) -> Self {
     self.map(|pat| match pat {
       Pattern::Binding(_) => pat,
       Pattern::RefMut(_) => pat,
@@ -695,13 +695,13 @@ impl Parse for Pattern {
 // # Expressions
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-struct TypeExpr {
-  name: Ident,
-  span: Span,
+pub struct TypeExpr {
+  pub name: Ident,
+  pub span: Span,
 }
 
 impl TypeExpr {
-  fn new(name: Ident, span: Span) -> Self {
+  pub fn new(name: Ident, span: Span) -> Self {
     Self { name, span }
   }
 }
@@ -727,14 +727,14 @@ impl Parse for TypeExpr {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-struct RefMutExpr {
-  expr: Box<Expr>,
-  span: Span,
-  span_min: Span,
+pub struct RefMutExpr {
+  pub expr: Box<Expr>,
+  pub span: Span,
+  pub span_min: Span,
 }
 
 impl RefMutExpr {
-  fn new(expr: Expr, span: Span, span_min: Span) -> Self {
+  pub fn new(expr: Expr, span: Span, span_min: Span) -> Self {
     Self { expr: Box::new(expr), span, span_min }
   }
 }
@@ -755,14 +755,14 @@ impl Parse for RefMutExpr {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-struct RefExpr {
-  expr: Box<Expr>,
-  span: Span,
-  span_min: Span,
+pub struct RefExpr {
+  pub expr: Box<Expr>,
+  pub span: Span,
+  pub span_min: Span,
 }
 
 impl RefExpr {
-  fn new(expr: Expr, span: Span, span_min: Span) -> Self {
+  pub fn new(expr: Expr, span: Span, span_min: Span) -> Self {
     Self { expr: Box::new(expr), span, span_min }
   }
 }
@@ -783,14 +783,14 @@ impl Parse for RefExpr {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-struct SliceExpr {
-  expr: Box<Expr>,
-  span: Span,
-  span_min: Span,
+pub struct SliceExpr {
+  pub expr: Box<Expr>,
+  pub span: Span,
+  pub span_min: Span,
 }
 
 impl SliceExpr {
-  fn new(expr: Expr, span: Span, span_min: Span) -> Self {
+  pub fn new(expr: Expr, span: Span, span_min: Span) -> Self {
     Self { expr: Box::new(expr), span, span_min }
   }
 }
@@ -812,14 +812,14 @@ impl Parse for SliceExpr {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-struct ParenExpr {
-  expr: Box<Expr>,
-  span: Span,
-  span_min: Span,
+pub struct ParenExpr {
+  pub expr: Box<Expr>,
+  pub span: Span,
+  pub span_min: Span,
 }
 
 impl ParenExpr {
-  fn new(expr: Expr, span: Span, span_min: Span) -> Self {
+  pub fn new(expr: Expr, span: Span, span_min: Span) -> Self {
     Self { expr: Box::new(expr), span, span_min }
   }
 }
@@ -841,7 +841,7 @@ impl Parse for ParenExpr {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-enum Expr {
+pub enum Expr {
   Type(TypeExpr),
   RefMut(RefMutExpr),
   Ref(RefExpr),
@@ -850,7 +850,7 @@ enum Expr {
 }
 
 impl Expr {
-  fn span(&self) -> Span {
+  pub fn span(&self) -> Span {
     match self {
       Expr::Type(x) => x.span,
       Expr::RefMut(x) => x.span,
@@ -860,7 +860,7 @@ impl Expr {
     }
   }
 
-  fn span_min(&self) -> Span {
+  pub fn span_min(&self) -> Span {
     match self {
       Expr::Type(x) => x.span,
       Expr::RefMut(x) => x.span_min,
@@ -871,7 +871,7 @@ impl Expr {
   }
 
   #[must_use]
-  fn map<F: Fn(Expr) -> Expr>(self, f: F) -> Self {
+  pub fn map<F: Fn(Expr) -> Expr>(self, f: F) -> Self {
     match f(self) {
       s @ Expr::Type(_) => s,
       Expr::RefMut(mut x) => {
@@ -894,7 +894,7 @@ impl Expr {
   }
 
   #[must_use]
-  fn simplify(self) -> Self {
+  pub fn simplify(self) -> Self {
     self.map(|expr| match expr {
       Expr::Type(_) => expr,
       Expr::RefMut(_) => expr,
@@ -905,7 +905,7 @@ impl Expr {
   }
 
   #[must_use]
-  fn make_shared(self) -> Self {
+  pub fn make_shared(self) -> Self {
     match self {
       Expr::Type(_) => self,
       Expr::RefMut(RefMutExpr { expr, span, span_min }) => {
@@ -918,7 +918,7 @@ impl Expr {
   }
 
   #[must_use]
-  fn make_all_shared(self) -> Self {
+  pub fn make_all_shared(self) -> Self {
     self.map(|expr| expr.make_shared())
   }
 }
@@ -952,15 +952,15 @@ impl Parse for Expr {
 // # Statements
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-struct LetStmt {
-  pat: Pattern,
-  expr: Expr,
-  span: Span,
-  span_min: Span,
+pub struct LetStmt {
+  pub pat: Pattern,
+  pub expr: Expr,
+  pub span: Span,
+  pub span_min: Span,
 }
 
 impl LetStmt {
-  fn new(
+  pub fn new(
     pat: Pattern,
     expr: Expr,
     span: Span,
@@ -969,24 +969,24 @@ impl LetStmt {
     Self { pat, expr, span, span_min }.simplify()
   }
 
-  fn from_str(xs: &str) -> Result<LetStmt, Error> {
+  pub fn from_str(xs: &str) -> Result<LetStmt, Error> {
     let xs = lex(xs)?;
     let mut cx = Ctx::new(&xs);
     LetStmt::parse(&mut cx).map(|x| x.simplify())
   }
 
-  fn from_pat_expr(pat: &Pattern, expr: &Expr) -> Self {
+  pub fn from_pat_expr(pat: &Pattern, expr: &Expr) -> Self {
     let xs = format!("let {} = {};", pat, expr);
     Self::from_str(&xs).unwrap()
   }
 
   #[cfg(test)]
-  fn as_string(&self) -> String {
+  pub fn as_string(&self) -> String {
     format!("{}", self)
   }
 
   #[must_use]
-  fn simplify(self) -> Self {
+  pub fn simplify(self) -> Self {
     Self {
       pat: self.pat.simplify(),
       expr: self.expr.simplify(),
@@ -997,18 +997,18 @@ impl LetStmt {
 
   #[allow(dead_code)]
   #[must_use]
-  fn reparse(self) -> Self {
+  pub fn reparse(self) -> Self {
     let xs = lex(&format!("{}", self)).unwrap();
     let mut cx = Ctx::new(&xs);
     Self::parse(&mut cx).unwrap().simplify()
   }
 
-  fn parsing_marks(&self) -> ParsingMarks<'_> {
+  pub fn parsing_marks(&self) -> ParsingMarks<'_> {
     ParsingMarks(self)
   }
 }
 
-struct ParsingMarks<'s>(&'s LetStmt);
+pub struct ParsingMarks<'s>(&'s LetStmt);
 
 impl<'s> Display for ParsingMarks<'s> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -1164,20 +1164,20 @@ fn test_base64() {
 use serde_json::json;
 
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
-enum MermaidLinkKind {
+pub enum MermaidLinkKind {
   View,
   Edit,
   Img(&'static str),
 }
 
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
-struct Mermaid<C> {
+pub struct Mermaid<C> {
   link_kind: MermaidLinkKind,
   code: C,
 }
 
 impl<C> Mermaid<C> {
-  fn new(link_kind: MermaidLinkKind, code: C) -> Self {
+  pub fn new(link_kind: MermaidLinkKind, code: C) -> Self {
     Self { link_kind, code }
   }
 }
@@ -1188,7 +1188,7 @@ impl<C: Display> Display for Mermaid<C> {
   }
 }
 
-fn write_mermaid_link<W: Write, C: Display>(
+pub fn write_mermaid_link<W: Write, C: Display>(
   w: &mut W,
   code: C,
   kind: MermaidLinkKind,
@@ -1234,7 +1234,7 @@ fn write_mermaid_link<W: Write, C: Display>(
   Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord,
 )]
 #[repr(u8)]
-enum Node {
+pub enum Node {
   Start,
   Error,
   Move,
@@ -1245,13 +1245,13 @@ enum Node {
   Ref,
 }
 
-const NODES: &[Node] = {
+pub const NODES: &[Node] = {
   use Node::*;
   &[Move, MoveBehindRef, RefMut, RefMutBehindRef, Ref]
 };
 
 impl Node {
-  fn label(&self) -> &'static str {
+  pub fn label(&self) -> &'static str {
     match self {
       Node::Start => "Start",
       Node::Error => "Error",
@@ -1264,7 +1264,7 @@ impl Node {
     }
   }
 
-  fn attr(&self) -> &'static str {
+  pub fn attr(&self) -> &'static str {
     match self {
       Node::Start => "start",
       Node::Error => "error",
@@ -1277,7 +1277,7 @@ impl Node {
     }
   }
 
-  fn id(&self) -> &'static str {
+  pub fn id(&self) -> &'static str {
     match self {
       Node::Start => "I",
       Node::Error => "E",
@@ -1301,7 +1301,7 @@ impl Display for Node {
   Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord,
 )]
 #[repr(u8)]
-enum EdgeDir {
+pub enum EdgeDir {
   Forward,
   Backward,
   ToSelf,
@@ -1309,7 +1309,7 @@ enum EdgeDir {
 }
 
 impl EdgeDir {
-  fn color(&self) -> &'static str {
+  pub fn color(&self) -> &'static str {
     match self {
       EdgeDir::Forward => "green",
       EdgeDir::Backward => "blue",
@@ -1323,7 +1323,7 @@ impl EdgeDir {
   Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord,
 )]
 #[repr(u8)]
-enum EdgeTy {
+pub enum EdgeTy {
   NrpVsRef,
   NrpVsRefMut,
   NrpVsT,
@@ -1341,7 +1341,7 @@ enum EdgeTy {
   Empty,
 }
 
-const EDGE_TYS: &[EdgeTy] = {
+pub const EDGE_TYS: &[EdgeTy] = {
   use EdgeTy::*;
   &[
     NrpVsRef,
@@ -1362,7 +1362,7 @@ const EDGE_TYS: &[EdgeTy] = {
 };
 
 impl EdgeTy {
-  fn label(&self) -> &'static str {
+  pub fn label(&self) -> &'static str {
     match self {
       EdgeTy::NrpVsRef => "[]-&",
       EdgeTy::NrpVsRefMut => "[]-&mut",
@@ -1382,7 +1382,7 @@ impl EdgeTy {
     }
   }
 
-  fn description(&self) -> &'static str {
+  pub fn description(&self) -> &'static str {
     match self {
       EdgeTy::NrpVsRef => {
         "non-reference pattern matches against shared reference"
@@ -1436,18 +1436,18 @@ impl Display for EdgeTy {
 #[derive(
   Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord,
 )]
-struct Edge {
-  from: Node,
-  ty: EdgeTy,
-  to: Node,
+pub struct Edge {
+  pub from: Node,
+  pub ty: EdgeTy,
+  pub to: Node,
 }
 
 impl Edge {
-  fn new(from: Node, to: Node, ty: EdgeTy) -> Self {
+  pub fn new(from: Node, to: Node, ty: EdgeTy) -> Self {
     Self { from, to, ty }
   }
 
-  fn dir(&self) -> EdgeDir {
+  pub fn dir(&self) -> EdgeDir {
     if self.to == Node::Error {
       EdgeDir::Error
     } else if self.from == self.to {
@@ -1475,20 +1475,20 @@ impl Display for Edge {
 }
 
 #[derive(Debug)]
-struct Graph {
-  edges: Vec<Edge>,
+pub struct Graph {
+  pub edges: Vec<Edge>,
 }
 
 impl Graph {
-  fn new() -> Self {
+  pub fn new() -> Self {
     Self { edges: Vec::new() }
   }
 
-  fn add_edge(&mut self, from: Node, to: Node, ty: EdgeTy) {
+  pub fn add_edge(&mut self, from: Node, to: Node, ty: EdgeTy) {
     self.edges.push(Edge::new(from, to, ty))
   }
 
-  fn nodes(&self) -> Vec<Node> {
+  pub fn nodes(&self) -> Vec<Node> {
     let mut xs = HashSet::new();
     for x in &self.edges {
       xs.insert(x.from);
@@ -1499,12 +1499,12 @@ impl Graph {
     xs
   }
 
-  fn sort_edges(&mut self) {
+  pub fn sort_edges(&mut self) {
     self.edges.sort();
   }
 
   /// Delete edges from terminal nodes.
-  fn simplify_terminal(&mut self) {
+  pub fn simplify_terminal(&mut self) {
     let mut h = HashSet::new();
     for x in &self.edges {
       if x.from != x.to {
@@ -1515,7 +1515,7 @@ impl Graph {
   }
 
   /// Delete edge types that always recurse.
-  fn simplify_always_recurse(&mut self) {
+  pub fn simplify_always_recurse(&mut self) {
     let mut h = HashSet::new();
     for x in &self.edges {
       if x.from != x.to {
@@ -1526,7 +1526,7 @@ impl Graph {
   }
 
   /// Delete error edges.
-  fn remove_error_edges(&mut self) {
+  pub fn remove_error_edges(&mut self) {
     self.edges.retain(|x| x.to != Node::Error);
   }
 
@@ -1568,18 +1568,18 @@ impl Graph {
     }
   }
 
-  fn simplify_recuse(&mut self) {
+  pub fn simplify_recuse(&mut self) {
     self.simplify_terminal();
     self.simplify_always_recurse();
     self.sort_edges();
   }
 
-  fn simplify_error(&mut self) {
+  pub fn simplify_error(&mut self) {
     self.remove_error_edges();
     self.sort_edges();
   }
 
-  fn edge_idxs_by_dir(&self) -> HashMap<EdgeDir, HashSet<usize>> {
+  pub fn edge_idxs_by_dir(&self) -> HashMap<EdgeDir, HashSet<usize>> {
     let mut xs = HashMap::new();
     for (i, x) in self.edges.iter().enumerate() {
       let s = xs.entry(x.dir()).or_insert(HashSet::new());
@@ -1588,7 +1588,10 @@ impl Graph {
     xs
   }
 
-  fn write_link_styles<W: Write>(&self, w: &mut W) -> fmt::Result {
+  pub fn write_link_styles<W: Write>(
+    &self,
+    w: &mut W,
+  ) -> fmt::Result {
     let mut v = self.edge_idxs_by_dir();
     let mut vs = Vec::new();
     for (k, v) in v.drain() {
@@ -1611,7 +1614,7 @@ impl Graph {
     Ok(())
   }
 
-  fn write_header<W: Write>(&self, w: &mut W) -> fmt::Result {
+  pub fn write_header<W: Write>(&self, w: &mut W) -> fmt::Result {
     writeln!(
       w,
       "%%{{ init: {{ 'flowchart': {{ 'curve': 'linear' }} }} }}%%\n"
@@ -1619,14 +1622,14 @@ impl Graph {
     writeln!(w, "flowchart LR\n")
   }
 
-  fn write_nodes<W: Write>(&self, w: &mut W) -> fmt::Result {
+  pub fn write_nodes<W: Write>(&self, w: &mut W) -> fmt::Result {
     for x in self.nodes() {
       writeln!(w, "{}", x)?;
     }
     writeln!(w)
   }
 
-  fn write_edges<W: Write>(
+  pub fn write_edges<W: Write>(
     &self,
     w: &mut W,
     debug: bool,
@@ -1662,70 +1665,70 @@ impl Display for Graph {
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
 #[non_exhaustive]
-struct Conf {
+pub struct Conf {
   /// Disable match ergonomics entirely.
-  no_me: bool,
+  pub no_me: bool,
   /// When the default binding mode is not `move`, writing `mut` on a
   /// binding is an error.
-  rule1: bool,
+  pub rule1: bool,
   /// When a reference pattern matches against a reference, do not
   /// update the default binding mode.
-  rule2: bool,
+  pub rule2: bool,
   /// Keep track of whether we have matched either a reference pattern
   /// or a non-reference pattern against a shared reference, and if
   /// so, set the DBM to `ref` when we would otherwise set it to `ref
   /// mut`.
-  rule3: bool,
+  pub rule3: bool,
   /// If we've previously matched against a shared reference in the
   /// scrutinee (or against a `ref` DBM under Rule 4, or against a
   /// mutable reference treated as a shared one or a `ref mut` DB
   /// treated as a `ref` one under Rule 5), if we've reached a binding
   /// and the scrutinee is a mutable reference, coerce it to a shared
   /// reference.
-  rule3_ext1: bool,
+  pub rule3_ext1: bool,
   /// If a reference pattern is being matched against a non-reference
   /// type and if the DBM is `ref` or `ref mut`, match the pattern
   /// against the DBM as though it were a type.
-  rule4: bool,
+  pub rule4: bool,
   /// If an `&` pattern is being matched against a non-reference type
   /// or an `&mut` pattern is being matched against a shared reference
   /// type or a non-reference type, and if the DBM is `ref` or `ref
   /// mut`, match the pattern against the DBM as though it were a
   /// type.
-  rule4_ext: bool,
+  pub rule4_ext: bool,
   /// If an `&` pattern is being matched against a mutable reference
   /// type or a non-reference type, or if an `&mut` pattern is being
   /// matched against a shared reference type or a non-reference type,
   /// and if the DBM is `ref` or `ref mut`, match the pattern against
   /// the DBM as though it were a type.
-  rule4_ext2: bool,
+  pub rule4_ext2: bool,
   /// If the DBM is `ref` or `ref mut`, match a reference pattern
   /// against it as though it were a type *before* considering the
   /// scrutinee.
-  rule4_early: bool,
+  pub rule4_early: bool,
   /// If a `&` pattern is being matched against a type of mutable
   /// reference (or against a `ref mut` DBM under *Rule 4*), act as
   /// though the type were a shared reference instead (or that a `ref
   /// mut` DBM is a `ref` DBM instead).
-  rule5: bool,
+  pub rule5: bool,
   /// Rule 3, but lazily applied.
-  rule3_lazy: bool,
+  pub rule3_lazy: bool,
   /// Spin rule.
-  spin: bool,
+  pub spin: bool,
 }
 
 impl Conf {
   #[allow(dead_code)]
-  fn pre_rfc2005() -> Self {
+  pub fn pre_rfc2005() -> Self {
     Self { no_me: true, ..<_>::default() }
   }
 
-  fn rfc2005() -> Self {
+  pub fn rfc2005() -> Self {
     Self::default()
   }
 
   #[allow(dead_code)]
-  fn rfc3627_2021() -> Self {
+  pub fn rfc3627_2021() -> Self {
     Self {
       rule3: true,
       rule4: true,
@@ -1736,11 +1739,11 @@ impl Conf {
   }
 
   #[allow(dead_code)]
-  fn rfc_3627_2024_min() -> Self {
+  pub fn rfc_3627_2024_min() -> Self {
     Self { rule1: true, rule2: true, ..<_>::default() }
   }
 
-  fn rfc3627_2024() -> Self {
+  pub fn rfc3627_2024() -> Self {
     Self {
       rule1: true,
       rule2: true,
@@ -1752,7 +1755,7 @@ impl Conf {
     }
   }
 
-  fn rpjohnst_2024() -> Self {
+  pub fn rpjohnst_2024() -> Self {
     Self {
       rule1: true,
       rule2: true,
@@ -1763,7 +1766,7 @@ impl Conf {
     }
   }
 
-  fn waffle_2024() -> Self {
+  pub fn waffle_2024() -> Self {
     Self {
       rule1: true,
       rule3: true,
@@ -1773,7 +1776,10 @@ impl Conf {
     }
   }
 
-  fn get_mut(&mut self, flag: &str) -> Result<&mut bool, ConfError> {
+  pub fn get_mut(
+    &mut self,
+    flag: &str,
+  ) -> Result<&mut bool, ConfError> {
     Ok(match flag {
       "no_me" | "no_match_ergonomics" => &mut self.no_me,
       "rule1" => &mut self.rule1,
@@ -1791,7 +1797,7 @@ impl Conf {
     })
   }
 
-  fn set(&mut self, flag: &str) -> Result<(), ConfError> {
+  pub fn set(&mut self, flag: &str) -> Result<(), ConfError> {
     match flag {
       "stable" => *self = Self::rfc2005(),
       "proposed" | "rfc" => *self = Self::rfc3627_2024(),
@@ -1805,7 +1811,7 @@ impl Conf {
     Ok(())
   }
 
-  fn unset(&mut self, flag: &str) -> Result<(), ConfError> {
+  pub fn unset(&mut self, flag: &str) -> Result<(), ConfError> {
     let flag = self.get_mut(flag)?;
     *flag = false;
     Ok(())
@@ -1834,7 +1840,7 @@ impl Display for Conf {
   Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd,
 )]
 #[repr(u8)]
-enum StepNote {
+pub enum StepNote {
   LazilySetToRef,
   EagerlySetToRef,
   SpinHappened,
@@ -1854,7 +1860,7 @@ enum StepNote {
 }
 
 impl StepNote {
-  fn description(&self) -> &'static str {
+  pub fn description(&self) -> &'static str {
     match self {
       StepNote::LazilySetToRef => {
         "sets binding to `ref` lazily behind reference"
@@ -1916,7 +1922,7 @@ impl Display for StepNote {
   Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd,
 )]
 #[repr(u8)]
-enum StepError {
+pub enum StepError {
   MutTokNotAllowedBehindRef,
   RefMutNotAllowedBehindRef,
   CannotMoveBehindRef,
@@ -1927,7 +1933,7 @@ enum StepError {
 }
 
 impl StepError {
-  fn description(&self) -> &'static str {
+  pub fn description(&self) -> &'static str {
     match self {
       StepError::MutTokNotAllowedBehindRef => {
         "`mut` on a binding is not allowed behind a reference"
@@ -1955,23 +1961,23 @@ impl Display for StepError {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-struct NodeStep {
-  conf: Conf,
-  node: Node,
-  behind_ref: bool,
-  behind_ref_mut: bool,
-  notes: HashSet<StepNote>,
-  error: Option<StepError>,
-  last: bool,
-  skip_expr: bool,
-  skip_pat: bool,
-  make_shared: bool,
-  make_all_shared: bool,
-  fill_shared: bool,
+pub struct NodeStep {
+  pub conf: Conf,
+  pub node: Node,
+  pub behind_ref: bool,
+  pub behind_ref_mut: bool,
+  pub notes: HashSet<StepNote>,
+  pub error: Option<StepError>,
+  pub last: bool,
+  pub skip_expr: bool,
+  pub skip_pat: bool,
+  pub make_shared: bool,
+  pub make_all_shared: bool,
+  pub fill_shared: bool,
 }
 
 impl NodeStep {
-  fn new(conf: Conf, node: Node) -> Self {
+  pub fn new(conf: Conf, node: Node) -> Self {
     Self {
       conf,
       node,
@@ -1988,18 +1994,18 @@ impl NodeStep {
     }
   }
 
-  fn add_note(&mut self, note: StepNote) {
+  pub fn add_note(&mut self, note: StepNote) {
     self.notes.insert(note);
   }
 
-  fn node(&mut self, node: Node, note: StepNote) -> Self {
+  pub fn node(&mut self, node: Node, note: StepNote) -> Self {
     assert!(!matches!(node, Node::Error));
     self.add_note(note);
     self.node = node;
     self.clone()
   }
 
-  fn node_last(&mut self, node: Node, note: StepNote) -> Self {
+  pub fn node_last(&mut self, node: Node, note: StepNote) -> Self {
     assert!(!matches!(node, Node::Error));
     self.add_note(note);
     self.node = node;
@@ -2007,34 +2013,34 @@ impl NodeStep {
     self.clone()
   }
 
-  fn err(&mut self, err: StepError) -> Self {
+  pub fn err(&mut self, err: StepError) -> Self {
     self.error = Some(err);
     self.node = Node::Error;
     self.last = true;
     self.clone()
   }
 
-  fn node1(&mut self, node: Node) -> Self {
+  pub fn node1(&mut self, node: Node) -> Self {
     assert!(!matches!(node, Node::Error));
     self.node = node;
     self.clone()
   }
 
-  fn node1_last(&mut self, node: Node) -> Self {
+  pub fn node1_last(&mut self, node: Node) -> Self {
     assert!(!matches!(node, Node::Error));
     self.node = node;
     self.last = true;
     self.clone()
   }
 
-  fn notes(&self) -> Vec<StepNote> {
+  pub fn notes(&self) -> Vec<StepNote> {
     let mut xs = self.notes.iter().copied().collect::<Vec<_>>();
     xs.sort();
     xs
   }
 }
 
-fn node_step(
+pub fn node_step(
   node: Node,
   mut edge_ty: EdgeTy,
   conf: Conf,
@@ -2268,7 +2274,7 @@ fn node_step(
   }
 }
 
-fn walk_graph<F: FnMut(Node, EdgeTy, Node)>(
+pub fn walk_graph<F: FnMut(Node, EdgeTy, Node)>(
   node: Node,
   conf: Conf,
   hs: &mut HashSet<(Node, EdgeTy, Node)>,
@@ -2283,7 +2289,7 @@ fn walk_graph<F: FnMut(Node, EdgeTy, Node)>(
   }
 }
 
-fn make_graph(conf: Conf) -> Graph {
+pub fn make_graph(conf: Conf) -> Graph {
   use EdgeTy::*;
   use Node::*;
   let mut g = Graph::new();
@@ -2297,7 +2303,7 @@ fn make_graph(conf: Conf) -> Graph {
 
 // # Reduction
 
-fn edge_ty(pat: &Pattern, expr: &Expr) -> EdgeTy {
+pub fn edge_ty(pat: &Pattern, expr: &Expr) -> EdgeTy {
   use EdgeTy::*;
   match (pat, expr) {
     (_, Expr::Paren(_)) => unimplemented!(),
@@ -2330,7 +2336,7 @@ fn edge_ty(pat: &Pattern, expr: &Expr) -> EdgeTy {
 }
 
 impl Pattern {
-  fn reduce_one(&mut self) -> bool {
+  pub fn reduce_one(&mut self) -> bool {
     match self {
       Pattern::RefMut(ref mut x) => *self = *x.pat.clone(),
       Pattern::Ref(ref mut x) => *self = *x.pat.clone(),
@@ -2353,7 +2359,7 @@ impl Pattern {
 }
 
 impl Expr {
-  fn reduce_one(&mut self) -> bool {
+  pub fn reduce_one(&mut self) -> bool {
     match self {
       Expr::Type(_) => return true,
       Expr::RefMut(ref mut x) => *self = *x.expr.clone(),
@@ -2366,18 +2372,18 @@ impl Expr {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-struct Reduction {
-  conf: Conf,
-  pat: Pattern,
-  expr: Expr,
-  node_step: NodeStep,
-  edge_ty: EdgeTy,
-  last: bool,
-  dbm_applied: bool,
+pub struct Reduction {
+  pub conf: Conf,
+  pub pat: Pattern,
+  pub expr: Expr,
+  pub node_step: NodeStep,
+  pub edge_ty: EdgeTy,
+  pub last: bool,
+  pub dbm_applied: bool,
 }
 
 impl Reduction {
-  fn new(conf: Conf, pat: Pattern, expr: Expr) -> Self {
+  pub fn new(conf: Conf, pat: Pattern, expr: Expr) -> Self {
     let node_step = NodeStep::new(conf, Node::Move);
     let pat = pat.simplify();
     let expr = expr.simplify();
@@ -2393,16 +2399,16 @@ impl Reduction {
     }
   }
 
-  fn from_stmt(conf: Conf, stmt: LetStmt) -> Self {
+  pub fn from_stmt(conf: Conf, stmt: LetStmt) -> Self {
     Self::new(conf, stmt.pat, stmt.expr)
   }
 
   #[allow(dead_code)]
-  fn from_str(conf: Conf, xs: &str) -> Result<Self, Error> {
+  pub fn from_str(conf: Conf, xs: &str) -> Result<Self, Error> {
     Ok(Self::from_stmt(conf, LetStmt::from_str(xs)?))
   }
 
-  fn step(&mut self) {
+  pub fn step(&mut self) {
     assert!(!self.last);
     assert!(!matches!(
       self.node_step.node,
@@ -2430,7 +2436,7 @@ impl Reduction {
     self.edge_ty = edge_ty(&self.pat, &self.expr);
   }
 
-  fn is_err(&self) -> bool {
+  pub fn is_err(&self) -> bool {
     let x = matches!(self.node_step.node, Node::Error);
     let y = self.node_step.error.is_some();
     if x || y {
@@ -2439,7 +2445,7 @@ impl Reduction {
     x
   }
 
-  fn as_binding_mode(&self) -> BindingMode {
+  pub fn as_binding_mode(&self) -> BindingMode {
     match self.node_step.node {
       Node::Start | Node::Error => panic!(),
       Node::Move => BindingMode::Move,
@@ -2451,7 +2457,7 @@ impl Reduction {
     }
   }
 
-  fn apply_dbm(&mut self) {
+  pub fn apply_dbm(&mut self) {
     let bm = self.as_binding_mode();
     self.pat = self.pat.clone().map(|pat| match pat {
       Pattern::RefMut(_) => pat,
@@ -2473,11 +2479,11 @@ impl Reduction {
     self.dbm_applied = true;
   }
 
-  fn as_stmt(&self) -> LetStmt {
+  pub fn as_stmt(&self) -> LetStmt {
     LetStmt::from_pat_expr(&self.pat, &self.expr)
   }
 
-  fn as_type(&self) -> (Ident, Expr) {
+  pub fn as_type(&self) -> (Ident, Expr) {
     assert!(self.last && !self.is_err());
     let expr = match self.as_binding_mode() {
       BindingMode::Move => self.expr.clone(),
@@ -2499,7 +2505,7 @@ impl Reduction {
     (ident, expr)
   }
 
-  fn to_type(&self) -> Result<(Ident, Expr), StepError> {
+  pub fn to_type(&self) -> Result<(Ident, Expr), StepError> {
     let mut r = self.clone();
     while !r.last {
       r.step();
@@ -2555,17 +2561,17 @@ impl Display for Reduction {
 }
 
 #[derive(Clone, Debug)]
-struct ShowType<'a> {
-  conf: Conf,
-  stmt: &'a LetStmt,
+pub struct ShowType<'a> {
+  pub conf: Conf,
+  pub stmt: &'a LetStmt,
 }
 
 impl<'a> ShowType<'a> {
-  fn from_stmt(conf: Conf, stmt: &'a LetStmt) -> Self {
+  pub fn from_stmt(conf: Conf, stmt: &'a LetStmt) -> Self {
     Self { conf, stmt }
   }
 
-  fn show_for<W: Write>(
+  pub fn show_for<W: Write>(
     &self,
     f: &mut W,
     conf: Conf,
@@ -2580,7 +2586,7 @@ impl<'a> ShowType<'a> {
     Ok(())
   }
 
-  fn show_for_current<W: Write>(
+  pub fn show_for_current<W: Write>(
     &self,
     f: &mut W,
     label: &'static str,
@@ -2595,35 +2601,35 @@ impl<'a> ShowType<'a> {
   }
 }
 
-struct RuleGraph<'a> {
-  conf: Conf,
-  stmt: &'a LetStmt,
-  top: RuleNode,
+pub struct RuleGraph<'a> {
+  pub conf: Conf,
+  pub stmt: &'a LetStmt,
+  pub top: RuleNode,
 }
 
 impl<'a> RuleGraph<'a> {
-  fn new(conf: Conf, stmt: &'a LetStmt, top: RuleNode) -> Self {
+  pub fn new(conf: Conf, stmt: &'a LetStmt, top: RuleNode) -> Self {
     Self { conf, stmt, top }
   }
 }
 
-struct RuleNode {
-  name: &'static str,
-  rule: fn(&mut Conf),
-  children: Vec<RuleNode>,
+pub struct RuleNode {
+  pub name: &'static str,
+  pub rule: fn(&mut Conf),
+  pub children: Vec<RuleNode>,
 }
 
 impl RuleNode {
-  fn new(name: &'static str, rule: fn(&mut Conf)) -> Self {
+  pub fn new(name: &'static str, rule: fn(&mut Conf)) -> Self {
     Self { name, rule, children: vec![] }
   }
 
-  fn push(&mut self, child: RuleNode) {
+  pub fn push(&mut self, child: RuleNode) {
     self.children.push(child);
   }
 
   #[must_use]
-  fn add_rule(
+  pub fn add_rule(
     &mut self,
     name: &'static str,
     rule: fn(&mut Conf),
@@ -2634,7 +2640,7 @@ impl RuleNode {
 }
 
 impl RuleNode {
-  fn disp(
+  pub fn disp(
     &self,
     f: &mut fmt::Formatter<'_>,
     level: usize,
