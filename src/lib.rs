@@ -58,8 +58,8 @@ impl Span {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Ident {
-  name: String,
-  span: Span,
+  pub name: String,
+  pub span: Span,
 }
 
 impl Ident {
